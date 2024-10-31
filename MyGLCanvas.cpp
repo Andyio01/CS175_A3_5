@@ -263,7 +263,7 @@ void MyGLCanvas::raycasting(glm::vec3 eyePosition_world, glm::vec3 lookVector_wo
 
 glm::vec3 MyGLCanvas::getFilmPointWorld(int pixelX, int pixelY, int screenWidth, int screenHeight){
 	float ndcX = -1.0f + (2.0f * pixelX) / (float)screenWidth;
-    float ndcY = 1.0f - (2.0f * pixelY) / (float)screenHeight;  
+    float ndcY = -1.0f + (2.0f * pixelY) / (float)screenHeight;  
 
     float tanHalfFovy = tan(camera->getViewAngle() * PI / 360.0f);
     float aspectRatio = (float)screenWidth / screenHeight;
