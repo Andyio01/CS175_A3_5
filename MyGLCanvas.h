@@ -4,18 +4,19 @@
 #define MYGLCANVAS_H
 
 #include <FL/gl.h>
-#include <FL/glut.h>
 #include <FL/glu.h>
+#include <FL/glut.H>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <time.h>
 #include <iostream>
+#include <time.h>
 
 #include "Shape.h"
 #include "Cube.h"
 #include "Cylinder.h"
 #include "Cone.h"
 #include "Sphere.h"
+#include "SceneGraph.h"
 
 #include "Camera.h"
 #include "scene/SceneParser.h"
@@ -39,6 +40,8 @@ public:
 
 	Camera* camera;
 	SceneParser* parser;
+	SceneGraph* scene;
+
 
 	MyGLCanvas(int x, int y, int w, int h, const char *l = 0);
 	~MyGLCanvas();
@@ -46,12 +49,15 @@ public:
 	void setSegments();
 	void loadSceneFile(const char* filenamePath);
 	void renderScene();
+	void flatSceneData();
+	void flatSceneDataRec(SceneNode* node, glm::mat4 curMat);
 
 private:
 	void setpixel(GLubyte* buf, int x, int y, int r, int g, int b);
-
+	glm::vec3 getRayDirectionInWorld(glm::vec3 filmPointInWorld, glm::vec3 eyePositionInWorld, glm::mat4 viewMatrix);
+	glm::vec3 getFilmPointWorld(int pixelX, int pixelY, int screenWidth, int screenHeight);
 	void draw();
-
+	void raycasting(glm::vec3 eyePosition, glm::vec3 lookVector, int i, int j);
 	int handle(int);
 	void resize(int x, int y, int w, int h);
 	void updateCamera(int width, int height);

@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/qiangyuli/projects/CS175/A3/CS175_A3_5",
+      "program": "/Users/qiangyuli/projects/CS175/A3/CS175_A3_5/build/Debug/outDebug"
+    }
+  ]
+}
