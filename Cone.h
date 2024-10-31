@@ -5,18 +5,24 @@
 
 class Cone : public Shape {
 public:
-	Cone() {};
+	Cone() { calculate(); };
 	~Cone() {};
 
 	OBJ_TYPE getType() {
 		return SHAPE_CONE;
 	}
 
-	void draw() {
-	};
+	void draw();
 
-	void drawNormal() {
-	};
+	void drawNormal();
+
+	void calculate();
+
+	void drawTriangleMeshFromFaces();
+
+	void drawNormalsFromFaces();
+
+	double intersect(glm::vec3 eyePosition, glm::vec3 rayv, glm::mat4 viewMatrix);
 
 private:
 };

@@ -5,19 +5,24 @@
 
 class Sphere : public Shape {
 public:
-	Sphere() {};
+	Sphere() { calculate(); };
 	~Sphere() {};
 
 	OBJ_TYPE getType() {
 		return SHAPE_SPHERE;
 	}
 
-	void draw() {
-	};
+	void draw();
 
-	void drawNormal() {
-	};
+	void drawNormal();
 
+	void calculate();
+
+	void drawTriangleMeshFromFaces();
+
+	void drawNormalsFromFaces();
+
+	double intersect(glm::vec3 eyePosition, glm::vec3 rayv, glm::mat4 viewMatrix);
 private:
 };
 
