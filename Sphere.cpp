@@ -124,7 +124,7 @@ double Sphere::intersect(glm::vec3 eyePosition_world, glm::vec3 rayv_world, glm:
     return -1.0;
 
 }
-
+// Compute the normal at the intersection point in object space
 glm::vec3 Sphere::computeNormal(glm::vec3 isectPoint){
     return glm::normalize(isectPoint);
 }

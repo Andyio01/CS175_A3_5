@@ -224,7 +224,9 @@ void MyGLCanvas::setpixel(GLubyte* buf, int x, int y, int r, int g, int b) {
 	buf[(y*pixelWidth + x) * 3 + 2] = (GLubyte)b;
 }
 
-glm::vec3 MyGLCanvas::calculateIllumination(glm::vec3 isectPoint, glm::vec3 normal, SceneGraphNode* closestNode){
+glm::vec3 MyGLCanvas::calculateIllumination(glm::vec3 isectPoint, glm::vec3 normal_object, SceneGraphNode* closestNode){
+	glm::mat4 inverseViewMatrix = glm::inverse(closestNode->getTransformation());
+	glm::vec3 normal = glm::normalize(glm::vec3(inverseViewMatrix * glm::vec4(normal_object, 0.0f)));
 	glm::vec3 color(0.0f);  // Initialize final color (R, G, B)
     
     // Ambient component
@@ -232,6 +234,33 @@ glm::vec3 MyGLCanvas::calculateIllumination(glm::vec3 isectPoint, glm::vec3 norm
     color.g += parser->getGlobalData().ka * closestNode->getMaterial().cAmbient.g;
     color.b += parser->getGlobalData().ka * closestNode->getMaterial().cAmbient.b;
 
+	SceneLightData light;
+	for (int i = 0; i < parser->getNumLights(); i++) {
+		parser->getLightData(i, light);
+		glm::vec3 lightDir;
+        
+		if (light.type == LightType::LIGHT_POINT) {
+			lightDir = glm::normalize(light.pos - isectPoint);
+		}
+		else {
+			lightDir = glm::normalize(-light.dir);
+		}
+		// Diffuse component
+		float diffIntensity = glm::max(glm::dot(normal, lightDir), 0.0f);
+		color.r += diffIntensity * light.color.r * closestNode->getMaterial().cDiffuse.r * parser->getGlobalData().kd;
+		color.g += diffIntensity * light.color.g * closestNode->getMaterial().cDiffuse.g * parser->getGlobalData().kd;
+		color.b += diffIntensity * light.color.b * closestNode->getMaterial().cDiffuse.b * parser->getGlobalData().kd;
+
+		// Specular component
+		glm::vec3 reflectDir = glm::normalize(glm::reflect(-lightDir, normal));
+        float specIntensity = glm::pow(glm::max(glm::dot(glm::normalize(camera->getLookVector()), reflectDir), 0.0f), closestNode->getMaterial().shininess);
+		color.r += specIntensity * light.color.r * closestNode->getMaterial().cSpecular.r * parser->getGlobalData().ks;
+		color.g += specIntensity * light.color.g * closestNode->getMaterial().cSpecular.g * parser->getGlobalData().ks;
+		color.b += specIntensity * light.color.b * closestNode->getMaterial().cSpecular.b * parser->getGlobalData().ks;
+	}
+	color.r = glm::clamp(color.r, 0.0f, 1.0f);
+    color.g = glm::clamp(color.g, 0.0f, 1.0f);
+    color.b = glm::clamp(color.b, 0.0f, 1.0f);
 	return color;
 }
 
@@ -239,6 +268,8 @@ void MyGLCanvas::raycasting(glm::vec3 eyePosition_world, glm::vec3 lookVector_wo
 	// Iterate through all the object in the scene graph
 	double mint = 1000000000;
 	Shape* closestShape = NULL;
+	SceneGraphNode* closestNode = NULL;
+
 	for (auto it = this->scene->getIterator(); it != this->scene->getEnd(); ++it) {
 		SceneGraphNode* node = *it;
 		Shape* shape = node->getShape();
@@ -248,6 +279,7 @@ void MyGLCanvas::raycasting(glm::vec3 eyePosition_world, glm::vec3 lookVector_wo
 		if (t > 0 && t < mint) {
 			mint = t;
 			closestShape = shape;
+			closestNode = node;
 		// }
 		}
 	}
@@ -262,8 +294,14 @@ void MyGLCanvas::raycasting(glm::vec3 eyePosition_world, glm::vec3 lookVector_wo
 			setpixel(pixels, i, j, 255, 255, 255);
 		}
 		else{
-			// Compute the normal at the intersection point
-			// TODO: Solve the illumination equation here, and set the pixel color accordingly
+			// Get the intersection point in object space
+			glm::mat4 inverseViewMatrix = glm::inverse(closestNode->getTransformation());
+			glm::vec3 isectPoint_object = glm::vec3(inverseViewMatrix * glm::vec4(isectPoint, 1.0f));
+			// Compute the normal at the intersection point and calculate the illumination
+			glm::vec3 normal_object = closestShape->computeNormal(isectPoint_object);
+			glm::vec3 normal_world = glm::vec3(closestNode->getTransformation() * glm::vec4(normal_object, 0.0f));
+			glm::vec3 color = calculateIllumination(isectPoint, normal_world, closestNode);
+			setpixel(pixels, i, j, color.r * 255, color.g * 255, color.b * 255);
 		}
 	}
 	else{
