@@ -50,7 +50,7 @@ public:
     virtual void     drawTriangleMeshFromFaces() {};
     virtual void     drawNormalsFromFaces() {};
     virtual double   intersect(glm::vec3 eyePosition, glm::vec3 rayv, glm::mat4 viewMatrix) = 0;
-
+    virtual glm::vec3 computeNormal(glm::vec3 isectPoint) = 0;
 protected:
 
     std::vector<Mesh*> graphs;

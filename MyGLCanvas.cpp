@@ -224,6 +224,17 @@ void MyGLCanvas::setpixel(GLubyte* buf, int x, int y, int r, int g, int b) {
 	buf[(y*pixelWidth + x) * 3 + 2] = (GLubyte)b;
 }
 
+glm::vec3 MyGLCanvas::calculateIllumination(glm::vec3 isectPoint, glm::vec3 normal, SceneGraphNode* closestNode){
+	glm::vec3 color(0.0f);  // Initialize final color (R, G, B)
+    
+    // Ambient component
+    color.r += parser->getGlobalData().ka * closestNode->getMaterial().cAmbient.r;
+    color.g += parser->getGlobalData().ka * closestNode->getMaterial().cAmbient.g;
+    color.b += parser->getGlobalData().ka * closestNode->getMaterial().cAmbient.b;
+
+	return color;
+}
+
 void MyGLCanvas::raycasting(glm::vec3 eyePosition_world, glm::vec3 lookVector_world, int i, int j){
 	// Iterate through all the object in the scene graph
 	double mint = 1000000000;

@@ -201,3 +201,7 @@ double Cylinder::intersect(glm::vec3 eyePosition, glm::vec3 rayv, glm::mat4 view
     // Implement intersection logic
     return 0.0; // temporary return value
 }
+
+glm::vec3 Cylinder::computeNormal(glm::vec3 isectPoint){
+    return glm::normalize(isectPoint);
+}
