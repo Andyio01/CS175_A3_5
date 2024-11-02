@@ -55,10 +55,9 @@ SceneParser::~SceneParser()
    m_objects.clear(); 
 }
 
-bool SceneParser :: getGlobalData(SceneGlobalData& data) 
+SceneGlobalData SceneParser :: getGlobalData() 
 {
-   data = m_globalData;
-   return true;
+   return m_globalData;
 }
 
 bool SceneParser :: getCameraData(SceneCameraData& data) 

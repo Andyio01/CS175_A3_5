@@ -91,14 +91,14 @@ void Sphere::drawNormal() {
 }
 // Doing intersection in object space
 double Sphere::intersect(glm::vec3 eyePosition_world, glm::vec3 rayv_world, glm::mat4 viewMatrix_o2w){
-    float world_ray_length = glm::length(rayv_world);
+    // float world_ray_length = glm::length(rayv_world);
 
     glm::mat4 invViewMatrix = glm::inverse(viewMatrix_o2w);
     glm::vec3 EyePosition_o = glm::vec3(invViewMatrix * glm::vec4(eyePosition_world, 1.0f));
     glm::vec3 invRayv_o = glm::vec3(invViewMatrix * glm::vec4(rayv_world, 0.0f));
 
-    float object_ray_length = glm::length(invRayv_o);
-    float scale_factor = world_ray_length / object_ray_length;
+    // float object_ray_length = glm::length(invRayv_o);
+    // float scale_factor = world_ray_length / object_ray_length;
     // Sphere equation: (x - center)^2 + y^2 + z^2 = radius^2
     // Ray equation: P(t) = eye + t * rayv
     // Substitute ray equation into sphere equation:
@@ -117,12 +117,16 @@ double Sphere::intersect(glm::vec3 eyePosition_world, glm::vec3 rayv_world, glm:
     double t2 = (-b + sqrtDiscriminant) / (2.0 * a);
 
 	 if (t1 > 0.0) {
-        return t1 * scale_factor; 
+        return t1 ; 
     } else if (t2 > 0.0) {
-        return t2 * scale_factor;  
+        return t2 ;  
     }
     return -1.0;
 
+}
+// Compute the normal at the intersection point in object space
+glm::vec3 Sphere::computeNormal(glm::vec3 isectPoint){
+    return glm::normalize(isectPoint);
 }
 
 void Sphere::calculate() {

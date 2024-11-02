@@ -51,7 +51,7 @@ public:
 	void renderScene();
 	void flatSceneData();
 	void flatSceneDataRec(SceneNode* node, glm::mat4 curMat);
-
+	glm::vec3 calculateIllumination(glm::vec3 isectPoint, glm::vec3 normal, SceneGraphNode* closestNode);
 private:
 	void setpixel(GLubyte* buf, int x, int y, int r, int g, int b);
 	glm::vec3 getRayDirectionInWorld(glm::vec3 filmPointInWorld, glm::vec3 eyePositionInWorld, glm::mat4 viewMatrix);
