@@ -244,6 +244,7 @@ double Cone::intersect(glm::vec3 eyePosition_world, glm::vec3 rayv_world, glm::m
     // This is a quadratic equation in t
     float a = rayv_object.x * rayv_object.x + rayv_object.z * rayv_object.z - 
                (r * r / (height * height)) * rayv_object.y * rayv_object.y;
+    //looks good after fix - to +
     float b = 2.0 * (EyePosition_object.x * rayv_object.x + EyePosition_object.z * rayv_object.z) + 
                2.0 * (r * r / (height * height)) * (apex - EyePosition_object.y) * rayv_object.y;
     float c = EyePosition_object.x * EyePosition_object.x + EyePosition_object.z * EyePosition_object.z - 
@@ -290,11 +291,60 @@ double Cone::intersect(glm::vec3 eyePosition_world, glm::vec3 rayv_world, glm::m
         ResT = t_bottom;
     }
 
+    //return ResT * scale_factor;
     return ResT;
-    return 0.0; // temporary return value
 }
 
 // compute the normal at the intersection point of object space!!
+// TODO: NEED TO FIX
 glm::vec3 Cone::computeNormal(glm::vec3 isectPoint){
-    return glm::normalize(isectPoint);
+    float apex = 0.5f;
+    float height = 1.0f;
+    float r = radius;
+    float k = r / height;
+    //same thing we need two parts;
+    //for bottom: it should always be (0, -1, 0)
+    //for side: simply get deriv of equation
+    // x^2 + z^2 = （apex - y)^2 * (r^2 / height^2)
+    // dF/dx = 2x
+    // dF/dy = -2k^2*(a-y)
+    // dF/dz = 2z
+    const float epsilon = 1e-4f; // for comparation
+
+    if (abs(isectPoint.y + 0.5f) < epsilon) { // cuz float, isectPoint.y should be around -0.5
+        return glm::vec3(0.0f, -1.0f, 0.0f);
+    } else {
+        float x = isectPoint.x;
+        float y = isectPoint.y;
+        float z = isectPoint.z;
+        
+        //(2x, -2k^2*(a-y), 2z)
+        float nx = 2.0f * x;
+        float ny = 2.0f * k * k * (apex - y);
+        float nz = 2.0f * z;
+
+        //glm::vec3 normal(nx, ny, nz);
+        glm::vec3 normal = glm::normalize(glm::vec3(nx, ny, nz));
+        return normal;
+    }
+
+    // float apexY = 0.5f;
+    // float bottomY = -0.5f; 
+    // float height = apexY - bottomY;
+    // float radius = 0.5f; 
+
+
+    // if (isectPoint.y <= bottomY + 1e-6) {
+    //     return glm::vec3(0.0f, -1.0f, 0.0f); 
+    // }  else {
+
+
+    // glm::vec3 normal;
+    // normal.x = isectPoint.x;
+    // normal.z = isectPoint.z;
+    // normal.y = radius / height; 
+
+    // return glm::normalize(normal); 
+    // }
+    //return glm::normalize(isectPoint);
 }
