@@ -207,8 +207,32 @@ void Cube::calculate() {
 
 double Cube::intersect(glm::vec3 eyePosition, glm::vec3 rayv, glm::mat4 viewMatrix) {
     // Implement intersection logic
-    return 0.0; // temporary return value
+    glm::mat4 invViewMatrix = glm::inverse(viewMatrix);
+    glm::vec3 EyePosition_o = glm::vec3(invViewMatrix * glm::vec4(eyePosition, 1.0f));
+    glm::vec3 invRayv_o = glm::vec3(invViewMatrix * glm::vec4(rayv, 0.0f));
+
+    //which plane
+    double t1 = (0.5-EyePosition_o.x)/invRayv_o.x;
+    double t2 = (-0.5-EyePosition_o.x)/invRayv_o.x;
+    double t3 = (0.5-EyePosition_o.y)/invRayv_o.y;
+    double t4 = (-0.5-EyePosition_o.y)/invRayv_o.y;
+    double t5 = (0.5-EyePosition_o.z)/invRayv_o.z;
+    double t6 = (-0.5-EyePosition_o.z)/invRayv_o.z;
+    double ts[] = {t1, t2, t3, t4, t5, t6};
+    double t = *std::min_element(std::begin(ts), std::end(ts),
+    [](double i1, double i2) {return i1 > 0.0 && (i2 <= 0.0 || i1 < i2);}
+);
+    if (t > 0.0) {
+        std::cout << "t is valid" << "\n";
+    } else {
+        std::cout << "t is not valid" << "\n";
+    }
+
+    return t;
+    
 }
+
+
 // compute the normal at the intersection point of object space!!
 glm::vec3 Cube::computeNormal(glm::vec3 isectPoint){
     return glm::normalize(isectPoint);
