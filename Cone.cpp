@@ -291,4 +291,10 @@ double Cone::intersect(glm::vec3 eyePosition_world, glm::vec3 rayv_world, glm::m
     }
 
     return ResT;
+    return 0.0; // temporary return value
+}
+
+// compute the normal at the intersection point of object space!!
+glm::vec3 Cone::computeNormal(glm::vec3 isectPoint){
+    return glm::normalize(isectPoint);
 }

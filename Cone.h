@@ -24,6 +24,8 @@ public:
 
 	double intersect(glm::vec3 eyePosition, glm::vec3 rayv, glm::mat4 viewMatrix);
 
+	glm::vec3 computeNormal(glm::vec3 isectPoint);
+
 private:
 };
 

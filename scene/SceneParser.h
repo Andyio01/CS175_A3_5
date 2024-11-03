@@ -29,7 +29,7 @@ class SceneParser
       bool parse();
 
       //! Returns global scene data
-      bool getGlobalData(SceneGlobalData& data);
+      SceneGlobalData getGlobalData();
 
       //! Returns camera data
       bool getCameraData(SceneCameraData& data);
