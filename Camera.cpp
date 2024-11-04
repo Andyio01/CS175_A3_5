@@ -198,7 +198,7 @@ void Camera::rotateU(float degrees) { //14
 }
 
 void Camera::rotateW(float degrees) {  //13
-	float radians = glm::radians(degrees);
+	float radians = glm::radians(-degrees);
     glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), radians, w);
     u = glm::vec3(rotationMatrix * glm::vec4(u, 0.0f));
     v = glm::vec3(rotationMatrix * glm::vec4(v, 0.0f));
