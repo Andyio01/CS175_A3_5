@@ -271,7 +271,39 @@ void MyGLCanvas::raycasting(glm::vec3 eyePosition_world, glm::vec3 lookVector_wo
 	float mint = 1000000000;
 	Shape* closestShape = NULL;
 	SceneGraphNode* closestNode = NULL;
+	
+	// Parallel region
+    // #pragma omp parallel
+    // {
 
+    //     // Thread-local variables
+    //     float thread_mint = 1000000000;
+    //     Shape* thread_closestShape = NULL;
+    //     SceneGraphNode* thread_closestNode = NULL;
+
+    //     // Parallel loop over scene graph nodes
+    //     #pragma omp for nowait
+    //     for (auto it = this->scene->getIterator(); it != this->scene->getEnd(); ++it) {
+    //         SceneGraphNode* node = *it;
+    //         Shape* shape = node->getShape();
+    //         float t = shape->intersect(eyePosition_world, lookVector_world, node->getTransformation());
+    //         if (t > 0 && t < thread_mint) {
+    //             thread_mint = t;
+    //             thread_closestShape = shape;
+    //             thread_closestNode = node;
+    //         }
+    //     }
+
+    //     // Critical section to update global minimum
+    //     #pragma omp critical
+    //     {
+    //         if (thread_mint < mint) {
+    //             mint = thread_mint;
+    //             closestShape = thread_closestShape;
+    //             closestNode = thread_closestNode;
+    //         }
+    //     }
+    // }
 	for (auto it = this->scene->getIterator(); it != this->scene->getEnd(); ++it) {
 		SceneGraphNode* node = *it;
 		Shape* shape = node->getShape();
@@ -361,7 +393,12 @@ void MyGLCanvas::renderScene() {
 	memset(pixels, 0, pixelWidth  * pixelHeight * 3);
 
 	glm::vec3 eyePosition_world = camera->getEyePoint();
-	for (int i = 0; i < pixelWidth; i++) {
+	double start_time = omp_get_wtime();
+	#pragma omp parallel num_threads(8)
+	{
+		// omp_set_num_threads(8);
+		#pragma omp for 
+		for (int i = 0; i < pixelWidth; i++) {
 		for (int j = 0; j < pixelHeight; j++) {
 			//TODO: this is where your ray casting will happen!
 			glm::vec3 filmPoint = getFilmPointWorld(i, j, pixelWidth, pixelHeight);
@@ -374,8 +411,11 @@ void MyGLCanvas::renderScene() {
 			// else {
 			// 	setpixel(pixels, i, j, 255, 255, 255);
 			// }
+			}
 		}
 	}
+	double end_time = omp_get_wtime();
+	printf("Time taken: %f seconds\n", end_time - start_time);
 	cout << "render complete" << endl;
 	redraw();
 }

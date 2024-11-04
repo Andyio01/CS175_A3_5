@@ -1,7 +1,7 @@
 #Makefile for assignment 3
 ASSIGN    = a3
 BREWPATH  = $(shell brew --prefix)
-CXX       = $(shell fltk-config --cxx) -std=c++11 -D_CRT_SECURE_NO_WARNINGS -DGL_SILENCE_DEPRECATION -Wno-macro-redefined -O2
+CXX       = $(shell fltk-config --cxx) -std=c++11 -D_CRT_SECURE_NO_WARNINGS -DGL_SILENCE_DEPRECATION -Wno-macro-redefined -O2 -fopenmp -o
 CXXFLAGS  = $(shell fltk-config --cxxflags) -I$(BREWPATH)/include
 LDFLAGS   = $(shell fltk-config --ldflags --use-gl --use-images) -L$(BREWPATH)/lib
 POSTBUILD = fltk-config --post # build .app folder for osx. (does nothing on pc)
