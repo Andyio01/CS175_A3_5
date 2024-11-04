@@ -225,8 +225,9 @@ void MyGLCanvas::setpixel(GLubyte* buf, int x, int y, int r, int g, int b) {
 }
 
 glm::vec3 MyGLCanvas::calculateIllumination(glm::vec3 isectPoint, glm::vec3 normal_object, SceneGraphNode* closestNode){
-	glm::mat4 inverseViewMatrix = glm::inverse(closestNode->getTransformation());
-	glm::vec3 normal = glm::normalize(glm::vec3(inverseViewMatrix * glm::vec4(normal_object, 0.0f)));
+	glm::mat4 inverseViewMatrix = glm::transpose(glm::inverse(closestNode->getTransformation()));
+	// glm::vec3 normal = glm::normalize(glm::vec3(inverseViewMatrix * glm::vec4(normal_object, 0.0f)));
+	glm::vec3 normal = glm::normalize(glm::mat3(inverseViewMatrix) * normal_object);
 	glm::vec3 color(0.0f);  // Initialize final color (R, G, B)
     
     // Ambient component
@@ -252,7 +253,7 @@ glm::vec3 MyGLCanvas::calculateIllumination(glm::vec3 isectPoint, glm::vec3 norm
 		color.b += diffIntensity * light.color.b * closestNode->getMaterial().cDiffuse.b * parser->getGlobalData().kd;
 
 		// Specular component
-		glm::vec3 reflectDir = glm::normalize(glm::reflect(-lightDir, normal));
+		glm::vec3 reflectDir = glm::normalize(glm::reflect(lightDir, normal));
         float specIntensity = glm::pow(glm::max(glm::dot(glm::normalize(camera->getLookVector()), reflectDir), 0.0f), closestNode->getMaterial().shininess);
 		color.r += specIntensity * light.color.r * closestNode->getMaterial().cSpecular.r * parser->getGlobalData().ks;
 		color.g += specIntensity * light.color.g * closestNode->getMaterial().cSpecular.g * parser->getGlobalData().ks;
