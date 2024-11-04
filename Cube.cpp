@@ -206,10 +206,78 @@ void Cube::calculate() {
 }
 
 double Cube::intersect(glm::vec3 eyePosition, glm::vec3 rayv, glm::mat4 viewMatrix) {
-    // Implement intersection logic
-    return 0.0; // temporary return value
+   // Transform the eye position and ray direction to the cube's local coordinate system
+    glm::mat4 invViewMatrix = glm::inverse(viewMatrix);
+    glm::vec3 EyePosition_o = glm::vec3(invViewMatrix * glm::vec4(eyePosition, 1.0f));
+    glm::vec3 invRayv_o = glm::vec3(invViewMatrix * glm::vec4(rayv, 0.0f));
+
+    // Define the six faces' normal vectors and face centers
+    glm::vec3 normals[] = {
+        glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f)
+    };
+    glm::vec3 points[] = {
+        glm::vec3(0.5f, 0.0f, 0.0f), glm::vec3(-0.5f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.0f, -0.5f, 0.0f),
+        glm::vec3(0.0f, 0.0f, 0.5f), glm::vec3(0.0f, 0.0f, -0.5f)
+    };
+
+    double tMin = std::numeric_limits<double>::max(); // Initialize to maximum value
+    bool hit = false;
+
+    // Calculate intersection points for each face
+    for (int i = 0; i < 6; ++i) {
+        const glm::vec3& normal = normals[i];
+        const glm::vec3& point = points[i];
+
+        float denom = glm::dot(invRayv_o, normal);
+        
+        // Skip parallel faces (avoid division by zero)
+        if (std::abs(denom) > 1e-5) {
+            double t = glm::dot(point - EyePosition_o, normal) / denom;
+            
+            // Ensure it's a forward intersection
+            if (t > 0.0) {
+                glm::vec3 isectPoint = EyePosition_o + float(t) * invRayv_o;
+                
+                // Check if the intersection point is inside the face
+                if (std::abs(isectPoint.x) < 0.5 + 1e-5 && std::abs(isectPoint.y) < 0.5 + 1e-5 && std::abs(isectPoint.z) < 0.5 + 1e-5) {
+                    tMin = std::min(tMin, t); // Update the smallest valid t value
+                    hit = true;
+                }
+            }
+        }
+    }
+
+    // Return the nearest valid intersection point or -1 if no intersection
+    if (hit) {
+        return tMin;
+    } else {
+        return -1.0;
+    }
+
+    
 }
+
+
 // compute the normal at the intersection point of object space!!
 glm::vec3 Cube::computeNormal(glm::vec3 isectPoint){
-    return glm::normalize(isectPoint);
+    // Determine which face the intersection point is on and return the corresponding normal vector 
+    if (std::abs(isectPoint.x - 0.5f) < 1e-4) {
+        return glm::vec3(1.0f, 0.0f, 0.0f);  // Right face
+    } else if (std::abs(isectPoint.x + 0.5f) < 1e-5) {
+        return glm::vec3(-1.0f, 0.0f, 0.0f); // Left face
+    } else if (std::abs(isectPoint.y - 0.5f) < 1e-5) {
+        return glm::vec3(0.0f, 1.0f, 0.0f);  // Top face
+    } else if (std::abs(isectPoint.y + 0.5f) < 1e-5) {
+        return glm::vec3(0.0f, -1.0f, 0.0f); // Bottom face
+    } else if (std::abs(isectPoint.z - 0.5f) < 1e-5) {  
+        return glm::vec3(0.0f, 0.0f, 1.0f);  // Front face
+    } else if (std::abs(isectPoint.z + 0.5f) < 1e-5) {
+        return glm::vec3(0.0f, 0.0f, -1.0f); // Back face
+    }
+    
+    // If no valid normal is found, return a zero vector (should not happen)
+    return glm::vec3(0.0f, 0.0f, 0.0f);
 }
