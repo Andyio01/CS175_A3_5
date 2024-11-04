@@ -206,29 +206,57 @@ void Cube::calculate() {
 }
 
 double Cube::intersect(glm::vec3 eyePosition, glm::vec3 rayv, glm::mat4 viewMatrix) {
-    // Implement intersection logic
+   // Transform the eye position and ray direction to the cube's local coordinate system
     glm::mat4 invViewMatrix = glm::inverse(viewMatrix);
     glm::vec3 EyePosition_o = glm::vec3(invViewMatrix * glm::vec4(eyePosition, 1.0f));
     glm::vec3 invRayv_o = glm::vec3(invViewMatrix * glm::vec4(rayv, 0.0f));
 
-    //which plane
-    double t1 = (0.5-EyePosition_o.x)/invRayv_o.x;
-    double t2 = (-0.5-EyePosition_o.x)/invRayv_o.x;
-    double t3 = (0.5-EyePosition_o.y)/invRayv_o.y;
-    double t4 = (-0.5-EyePosition_o.y)/invRayv_o.y;
-    double t5 = (0.5-EyePosition_o.z)/invRayv_o.z;
-    double t6 = (-0.5-EyePosition_o.z)/invRayv_o.z;
-    double ts[] = {t1, t2, t3, t4, t5, t6};
-    double t = *std::min_element(std::begin(ts), std::end(ts),
-    [](double i1, double i2) {return i1 > 0.0 && (i2 <= 0.0 || i1 < i2);}
-);
-    if (t > 0.0) {
-        std::cout << "t is valid" << "\n";
-    } else {
-        std::cout << "t is not valid" << "\n";
+    // Define the six faces' normal vectors and face centers
+    glm::vec3 normals[] = {
+        glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f)
+    };
+    glm::vec3 points[] = {
+        glm::vec3(0.5f, 0.0f, 0.0f), glm::vec3(-0.5f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(0.0f, -0.5f, 0.0f),
+        glm::vec3(0.0f, 0.0f, 0.5f), glm::vec3(0.0f, 0.0f, -0.5f)
+    };
+
+    double tMin = std::numeric_limits<double>::max(); // Initialize to maximum value
+    bool hit = false;
+
+    // Calculate intersection points for each face
+    for (int i = 0; i < 6; ++i) {
+        const glm::vec3& normal = normals[i];
+        const glm::vec3& point = points[i];
+
+        double denom = glm::dot(invRayv_o, normal);
+        
+        // Skip parallel faces (avoid division by zero)
+        if (std::abs(denom) > 1e-6) {
+            double t = glm::dot(point - EyePosition_o, normal) / denom;
+            
+            // Ensure it's a forward intersection
+            if (t > 0.0) {
+                glm::vec3 isectPoint = EyePosition_o + float(t) * invRayv_o;
+                
+                // Check if the intersection point is inside the face
+                if (std::abs(isectPoint.x) <= 0.5 && std::abs(isectPoint.y) <= 0.5 && std::abs(isectPoint.z) <= 0.5) {
+                    tMin = std::min(tMin, t); // Update the smallest valid t value
+                    hit = true;
+                }
+            }
+        }
     }
 
-    return t;
+    // Return the nearest valid intersection point or -1 if no intersection
+    if (hit) {
+        return tMin;
+    } else {
+        return -1.0;
+    }
+
     
 }
 
