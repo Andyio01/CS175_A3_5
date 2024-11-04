@@ -51,6 +51,7 @@ public:
 	void renderScene();
 	void flatSceneData();
 	void flatSceneDataRec(SceneNode* node, glm::mat4 curMat);
+	void raycasting_recursive(SceneGraphNode* node, glm::vec3 eyePosition_world, glm::vec3 lookVector_world, float& mint, Shape*& closestShape, SceneGraphNode*& closestNode);
 	glm::vec3 calculateIllumination(glm::vec3 isectPoint, glm::vec3 normal, SceneGraphNode* closestNode);
 private:
 	void setpixel(GLubyte* buf, int x, int y, int r, int g, int b);

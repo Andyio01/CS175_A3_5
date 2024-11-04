@@ -1,6 +1,7 @@
 #define NUM_OPENGL_LIGHTS 8
 
 #include "MyGLCanvas.h"
+#include "omp.h"
 // #include "Camera.h"
 
 int Shape::m_segmentsX;
@@ -266,16 +267,48 @@ glm::vec3 MyGLCanvas::calculateIllumination(glm::vec3 isectPoint, glm::vec3 norm
 
 void MyGLCanvas::raycasting(glm::vec3 eyePosition_world, glm::vec3 lookVector_world, int i, int j){
 	// Iterate through all the object in the scene graph
-	double mint = 1000000000;
+	float mint = 1000000000;
 	Shape* closestShape = NULL;
 	SceneGraphNode* closestNode = NULL;
+	
+	// Parallel region
+    // #pragma omp parallel
+    // {
 
+    //     // Thread-local variables
+    //     float thread_mint = 1000000000;
+    //     Shape* thread_closestShape = NULL;
+    //     SceneGraphNode* thread_closestNode = NULL;
+
+    //     // Parallel loop over scene graph nodes
+    //     #pragma omp for nowait
+    //     for (auto it = this->scene->getIterator(); it != this->scene->getEnd(); ++it) {
+    //         SceneGraphNode* node = *it;
+    //         Shape* shape = node->getShape();
+    //         float t = shape->intersect(eyePosition_world, lookVector_world, node->getTransformation());
+    //         if (t > 0 && t < thread_mint) {
+    //             thread_mint = t;
+    //             thread_closestShape = shape;
+    //             thread_closestNode = node;
+    //         }
+    //     }
+
+    //     // Critical section to update global minimum
+    //     #pragma omp critical
+    //     {
+    //         if (thread_mint < mint) {
+    //             mint = thread_mint;
+    //             closestShape = thread_closestShape;
+    //             closestNode = thread_closestNode;
+    //         }
+    //     }
+    // }
 	for (auto it = this->scene->getIterator(); it != this->scene->getEnd(); ++it) {
 		SceneGraphNode* node = *it;
 		Shape* shape = node->getShape();
 		// if(dynamic_cast<Sphere*>(shape) != nullptr){
 		
-		double t = shape->intersect(eyePosition_world, lookVector_world, node->getTransformation());
+		float t = shape->intersect(eyePosition_world, lookVector_world, node->getTransformation());
 		if (t > 0 && t < mint) {
 			mint = t;
 			closestShape = shape;
@@ -285,10 +318,10 @@ void MyGLCanvas::raycasting(glm::vec3 eyePosition_world, glm::vec3 lookVector_wo
 	}
 	// Have the intersection
 	if (closestShape != NULL) {
-		cout << "closest shape: " << closestShape->getType() << endl;
+		// cout << "closest shape: " << closestShape->getType() << endl;
 		// Compute the intersection point in world coordinates
 		glm::vec3 isectPoint = eyePosition_world + (float)mint * lookVector_world;
-		cout << "intersection point: " << isectPoint.x << ", " << isectPoint.y << ", " << isectPoint.z << endl;
+		// cout << "intersection point: " << isectPoint.x << ", " << isectPoint.y << ", " << isectPoint.z << endl;
 		if(isectOnly == 1){
 			// Set the pixel to white
 			setpixel(pixels, i, j, 255, 255, 255);
@@ -296,10 +329,15 @@ void MyGLCanvas::raycasting(glm::vec3 eyePosition_world, glm::vec3 lookVector_wo
 		else{
 			// Get the intersection point in object space
 			glm::mat4 inverseViewMatrix = glm::inverse(closestNode->getTransformation());
-			glm::vec3 isectPoint_object = glm::vec3(inverseViewMatrix * glm::vec4(isectPoint, 1.0f));
+			glm::vec3 eyePosition_object = glm::vec3(inverseViewMatrix * glm::vec4(eyePosition_world, 1.0f));
+			glm::vec3 lookVector_object = glm::vec3(inverseViewMatrix * glm::vec4(lookVector_world, 0.0f));
+			glm::vec3 isectPoint_object = eyePosition_object + (float)mint * lookVector_object;
+			// std::cout << "mint: " << (mint > 30) << std::endl;
+			// glm::vec3 isectPoint_object = glm::vec3(inverseViewMatrix * glm::vec4(isectPoint, 1.0f));
 			// Compute the normal at the intersection point and calculate the illumination
 			glm::vec3 normal_object = closestShape->computeNormal(isectPoint_object);
-			glm::vec3 normal_world = glm::vec3(closestNode->getTransformation() * glm::vec4(normal_object, 0.0f));
+			glm::vec3 normal_world = glm::normalize(glm::vec3(glm::transpose(glm::inverse(closestNode->getTransformation())) * glm::vec4(normal_object, 0.0f)));
+			
 			glm::vec3 color = calculateIllumination(isectPoint, normal_world, closestNode);
 			setpixel(pixels, i, j, color.r * 255, color.g * 255, color.b * 255);
 		}
@@ -354,7 +392,12 @@ void MyGLCanvas::renderScene() {
 	memset(pixels, 0, pixelWidth  * pixelHeight * 3);
 
 	glm::vec3 eyePosition_world = camera->getEyePoint();
-	for (int i = 0; i < pixelWidth; i++) {
+	double start_time = omp_get_wtime();
+	#pragma omp parallel num_threads(8)
+	{
+		// omp_set_num_threads(8);
+		#pragma omp for 
+		for (int i = 0; i < pixelWidth; i++) {
 		for (int j = 0; j < pixelHeight; j++) {
 			//TODO: this is where your ray casting will happen!
 			glm::vec3 filmPoint = getFilmPointWorld(i, j, pixelWidth, pixelHeight);
@@ -367,8 +410,11 @@ void MyGLCanvas::renderScene() {
 			// else {
 			// 	setpixel(pixels, i, j, 255, 255, 255);
 			// }
+			}
 		}
 	}
+	double end_time = omp_get_wtime();
+	printf("Time taken: %f seconds\n", end_time - start_time);
 	cout << "render complete" << endl;
 	redraw();
 }
