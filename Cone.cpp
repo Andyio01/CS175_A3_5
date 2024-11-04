@@ -221,73 +221,110 @@ void Cone::calculate() {
 double Cone::intersect(glm::vec3 eyePosition_world, glm::vec3 rayv_world, glm::mat4 viewMatrix_o2w) {
     // Implement intersection logic
     //viewMatrix is matrix object to world
-    float world_ray_length = glm::length(rayv_world);
+    //float world_ray_length = glm::length(rayv_world);
 
     glm::mat4 ViewMatrix_w2o = glm::inverse(viewMatrix_o2w);
     glm::vec3 EyePosition_object = glm::vec3(ViewMatrix_w2o * glm::vec4(eyePosition_world, 1.0f)); //it's a point
     glm::vec3 rayv_object = glm::vec3(ViewMatrix_w2o * glm::vec4(rayv_world, 0.0f)); //it's a vector
 
-    float object_ray_length = glm::length(rayv_object);
-    float scale_factor = world_ray_length / object_ray_length;
+    //float object_ray_length = glm::length(rayv_object);
+    //float scale_factor = world_ray_length / object_ray_length;
 
     //for each pixel no matter what it needs to return the smallest t
     // cone side equation: x^2 + z^2 = （apex - y)^2 * (r^2 / height^2)
     // apex = 0.5, height = 1
     // apex - y is height of current stack to the apex 
     // Ray equation: P(t) = eye + t * rayv
-    float apex = 0.5f;
-    float height = 1.0f;
-    float r = radius;
+    double apex = 0.5f;
+    double height = 1.0f;
+    double r = radius;
     //double resT;
     //cone should have two parts:
     //side part
     // This is a quadratic equation in t
-    float a = rayv_object.x * rayv_object.x + rayv_object.z * rayv_object.z - 
+    double a = rayv_object.x * rayv_object.x + rayv_object.z * rayv_object.z - 
                (r * r / (height * height)) * rayv_object.y * rayv_object.y;
     //looks good after fix - to +
-    float b = 2.0 * (EyePosition_object.x * rayv_object.x + EyePosition_object.z * rayv_object.z) + 
-               2.0 * (r * r / (height * height)) * (apex - EyePosition_object.y) * rayv_object.y;
-    float c = EyePosition_object.x * EyePosition_object.x + EyePosition_object.z * EyePosition_object.z - 
+    double b = 2.0f * (EyePosition_object.x * rayv_object.x + EyePosition_object.z * rayv_object.z) + 
+               2.0f * (r * r / (height * height)) * (apex - EyePosition_object.y) * rayv_object.y;
+    double c = EyePosition_object.x * EyePosition_object.x + EyePosition_object.z * EyePosition_object.z - 
                (r * r / (height * height)) * (apex - EyePosition_object.y) * (apex - EyePosition_object.y);
 
-    float discriminant = b * b - 4 * a * c;
-    float sqrt_discriminant = sqrt(discriminant);
-    float t1 = (-b - sqrt_discriminant) / (2 * a);
-    float t2 = (-b + sqrt_discriminant) / (2 * a);
-    float t_side = -1;
-    if (discriminant >= 0) {
-        float sqrt_discriminant = sqrt(discriminant);
-        float t1 = (-b - sqrt_discriminant) / (2 * a);
-        float t2 = (-b + sqrt_discriminant) / (2 * a);
+    double discriminant = b * b - 4 * a * c;
+    double t_side = -1.0f;
+    if (discriminant >= 0.0f) {
+        double sqrt_discriminant = sqrt(discriminant);
+        double t1 = (-b - sqrt_discriminant) / (2.0f * a);
+        double t2 = (-b + sqrt_discriminant) / (2.0f * a);
 
+        
         // pick smallest t
-        t_side = (t1 > 0 && t2 > 0) ? std::min(t1, t2) : (t1 > 0 ? t1 : (t2 > 0 ? t2 : -1));
+        if (t1 > 0.0f && t2 > 0.0f){
+            double y1 = EyePosition_object.y + (float)t1 * rayv_object.y;
+            double y2 = EyePosition_object.y + (float)t2 * rayv_object.y;
+            if (y1 < 0.5f && y2 < 0.5f){
+                t_side = std::min(t1, t2);
+            } else if (y1 < 0.5f){
+                t_side = t1;
+            } else if (y2 < 0.5f){
+                t_side = t2;
+            }
+        }
+        else if (t1 > 0.0f){
+            t_side = t1;
+        }
+        else if (t2 > 0.0f) {
+            t_side = t2;
+        }
 
-        // optional : check range
-        glm::vec3 intersectionPoint = EyePosition_object + t_side * rayv_object;
-        if (intersectionPoint.y < -0.5 || intersectionPoint.y > 0.5) {
-            t_side = -1; // over range
+        // option: check range
+        if (t_side > 0.0f) {
+            double y = EyePosition_object.y + (float)t_side * rayv_object.y;
+            
+            if (y < -height / 2.0f || y > height / 2.0f){
+                t_side = -1.0f; // over range no point
+            }
+            // } else {
+            //     std::cout << "in cone T_sides: " << t_side << std::endl;
+            //     std::cout << "in cone inte.y " << y << std::endl;
+            // }
+            
         }
     }
 
     //bottom part
     //bottom equpation: y = -0.5
-    float t_bottom = -1; //null
-    if(rayv_object.y != 0){
-        t_bottom = (-apex - EyePosition_object.y) / rayv_object.y;
-        glm::vec3 intersectionBottom = EyePosition_object + t_bottom * rayv_object;
-
-        if (intersectionBottom.x * intersectionBottom.x + intersectionBottom.z * intersectionBottom.z > r * r){
-            t_bottom = -1;
+    const double epsilon = 1e-6f;
+    double t_bottom = -1.0f; //null
+    if(abs(rayv_object.y) > epsilon){
+        //std::cout << "rayv_object.y" << rayv_object.y << std::endl;
+        t_bottom = (-height / 2.0f - EyePosition_object.y) / rayv_object.y;
+        if (t_bottom > 0.0f) {
+            //std::cout << "t_bottom > 0.0f" << t_bottom << std::endl;
+            glm::vec3 intersectionBottom = EyePosition_object + (float) t_bottom * rayv_object;
+            if (intersectionBottom.x * intersectionBottom.x + intersectionBottom.z * intersectionBottom.z > r * r){
+                t_bottom = -1.0f;
+            }
+        } else {
+            t_bottom = -1.0f;
         }
     }
-
-    float ResT = -1;
-    if (t_side > 0 && t_bottom > 0) {
+    
+    double ResT = -1.0f;
+    if (t_side > 0.0f && t_bottom > 0.0f) {
         ResT = std::min(t_side, t_bottom);
-    } else if (t_side > 0) {
+        // std::cout << "final T_sides: " << t_side << std::endl;
+        // std::cout << "final t_bottom: " << t_bottom << std::endl;
+        // std::cout << "compared t returned:" << std::endl;
+    } else if (t_side > 0.0f) {
+        // std::cout << "final T_sides: " << t_side << std::endl;
+        // std::cout << "final t_bottom: " << t_bottom << std::endl;
+        // std::cout << "compared t returned:" << std::endl;
         ResT = t_side;
-    } else if (t_bottom > 0) {
+    } else if (t_bottom > 0.0f) {
+        // std::cout << "final T_sides: " << t_side << std::endl;
+        // std::cout << "final t_bottom: " << t_bottom << std::endl;
+        // std::cout << "bot t returned:" << std::endl;
         ResT = t_bottom;
     }
 
@@ -298,10 +335,10 @@ double Cone::intersect(glm::vec3 eyePosition_world, glm::vec3 rayv_world, glm::m
 // compute the normal at the intersection point of object space!!
 // TODO: NEED TO FIX
 glm::vec3 Cone::computeNormal(glm::vec3 isectPoint){
-    float apex = 0.5f;
-    float height = 1.0f;
-    float r = radius;
-    float k = r / height;
+    double apex = 0.5f;
+    double height = 1.0f;
+    double r = radius;
+    double k = r / height;
     //same thing we need two parts;
     //for bottom: it should always be (0, -1, 0)
     //for side: simply get deriv of equation
@@ -309,22 +346,31 @@ glm::vec3 Cone::computeNormal(glm::vec3 isectPoint){
     // dF/dx = 2x
     // dF/dy = -2k^2*(a-y)
     // dF/dz = 2z
-    const float epsilon = 1e-4f; // for comparation
+    const double epsilon = 1e-4f; // for comparation
 
-    if (abs(isectPoint.y + 0.5f) < epsilon) { // cuz float, isectPoint.y should be around -0.5
+    if (abs(isectPoint.y + 0.5f) < epsilon) { // cuz double, isectPoint.y should be around -0.5
+        //std::cout << "cone bot: " << isectPoint.x << ", " << isectPoint.y << ", " << isectPoint.z << std::endl;
         return glm::vec3(0.0f, -1.0f, 0.0f);
     } else {
-        float x = isectPoint.x;
-        float y = isectPoint.y;
-        float z = isectPoint.z;
+        double x = isectPoint.x;
+        double y = isectPoint.y;
+        double z = isectPoint.z;
         
         //(2x, -2k^2*(a-y), 2z)
-        float nx = 2.0f * x;
-        float ny = 2.0f * k * k * (apex - y);
-        float nz = 2.0f * z;
+        double nx = 2.0f * x;
+        double ny = 2.0f * k * k * (apex - y);
+        double nz = 2.0f * z;
 
+        // glm::vec3 normal1;
+        // normal1.x = isectPoint.x;
+        // normal1.z = isectPoint.z;
+        // normal1.y = radius / height; 
+
+    // return glm::normalize(normal); 
+        
         //glm::vec3 normal(nx, ny, nz);
         glm::vec3 normal = glm::normalize(glm::vec3(nx, ny, nz));
+        //std::cout << "cone side: " << normal.x << ", " << normal.y << ", " << normal.z << std::endl;
         return normal;
     }
 
