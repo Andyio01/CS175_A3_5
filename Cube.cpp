@@ -231,10 +231,10 @@ double Cube::intersect(glm::vec3 eyePosition, glm::vec3 rayv, glm::mat4 viewMatr
         const glm::vec3& normal = normals[i];
         const glm::vec3& point = points[i];
 
-        double denom = glm::dot(invRayv_o, normal);
+        float denom = glm::dot(invRayv_o, normal);
         
         // Skip parallel faces (avoid division by zero)
-        if (std::abs(denom) > 1e-6) {
+        if (std::abs(denom) > 1e-5) {
             double t = glm::dot(point - EyePosition_o, normal) / denom;
             
             // Ensure it's a forward intersection
@@ -242,7 +242,7 @@ double Cube::intersect(glm::vec3 eyePosition, glm::vec3 rayv, glm::mat4 viewMatr
                 glm::vec3 isectPoint = EyePosition_o + float(t) * invRayv_o;
                 
                 // Check if the intersection point is inside the face
-                if (std::abs(isectPoint.x) <= 0.5 && std::abs(isectPoint.y) <= 0.5 && std::abs(isectPoint.z) <= 0.5) {
+                if (std::abs(isectPoint.x) < 0.5 + 1e-5 && std::abs(isectPoint.y) < 0.5 + 1e-5 && std::abs(isectPoint.z) < 0.5 + 1e-5) {
                     tMin = std::min(tMin, t); // Update the smallest valid t value
                     hit = true;
                 }
@@ -263,5 +263,21 @@ double Cube::intersect(glm::vec3 eyePosition, glm::vec3 rayv, glm::mat4 viewMatr
 
 // compute the normal at the intersection point of object space!!
 glm::vec3 Cube::computeNormal(glm::vec3 isectPoint){
-    return glm::normalize(isectPoint);
+    // Determine which face the intersection point is on and return the corresponding normal vector 
+    if (std::abs(isectPoint.x - 0.5f) < 1e-4) {
+        return glm::vec3(1.0f, 0.0f, 0.0f);  // Right face
+    } else if (std::abs(isectPoint.x + 0.5f) < 1e-5) {
+        return glm::vec3(-1.0f, 0.0f, 0.0f); // Left face
+    } else if (std::abs(isectPoint.y - 0.5f) < 1e-5) {
+        return glm::vec3(0.0f, 1.0f, 0.0f);  // Top face
+    } else if (std::abs(isectPoint.y + 0.5f) < 1e-5) {
+        return glm::vec3(0.0f, -1.0f, 0.0f); // Bottom face
+    } else if (std::abs(isectPoint.z - 0.5f) < 1e-5) {  
+        return glm::vec3(0.0f, 0.0f, 1.0f);  // Front face
+    } else if (std::abs(isectPoint.z + 0.5f) < 1e-5) {
+        return glm::vec3(0.0f, 0.0f, -1.0f); // Back face
+    }
+    
+    // If no valid normal is found, return a zero vector (should not happen)
+    return glm::vec3(0.0f, 0.0f, 0.0f);
 }
